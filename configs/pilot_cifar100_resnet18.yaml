@@ -1,0 +1,61 @@
+experiment:
+  name: cifar100_resnet18_similarity_pilot
+  stage: pilot
+
+dataset:
+  name: cifar100
+  data_root: ./data
+  num_classes: 100
+
+model:
+  architecture: resnet18
+  representation_layer: penultimate
+
+seeds:
+  smoke_test: [0]
+  confirmatory: [0, 1, 2]
+
+forget:
+  ratios: [0.01, 0.05]
+  expansion_ratios: [0.10]
+  split_ids_dir: ./artifacts/splits
+
+similarity:
+  source_model: original
+  representation: penultimate
+  metric: cosine
+  retain_score: nearest_forget_max
+  bins:
+    method: quantile
+    names: [low, mid, high]
+    count: 3
+  controls:
+    class_conditioned_analysis: true
+
+unlearning:
+  methods:
+    - exact_retraining
+    - retain_finetune
+    - negative_gradient
+  optional_methods: []
+
+evaluation:
+  primary:
+    - retain_accuracy_drop_by_similarity_bin
+  secondary:
+    - retain_accuracy
+    - forget_accuracy
+    - membership_inference_auc
+    - retrained_model_distance
+    - representation_drift
+    - relearning_recovery
+
+relearning:
+  enabled: true
+  checkpoints: [0, 10, 25, 50, 100]
+  note: "Finalize optimizer/LR/budget before confirmatory runs."
+
+output:
+  raw_dir: ./results/raw
+  table_dir: ./results/tables
+  figure_dir: ./results/figures
